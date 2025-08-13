@@ -1,73 +1,111 @@
+import sys
 import random
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QLabel, QPushButton, QLineEdit,
+    QVBoxLayout, QHBoxLayout, QMessageBox
+)
+from PyQt5.QtCore import Qt
 
-def spin_row():
-    symbols = ['🍒', '🍉', '🍋', '🔔', '⭐']
+class SlotMachine(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Python Slots")
+        self.setGeometry(600, 200, 400, 300)
+        self.balance = 100
 
-    return [random.choice(symbols) for _ in range(3)]
+        self.init_ui()
 
-def print_row(row):
-    print("*************")
-    print(" | ".join(row))
-    print("*************")
+    def init_ui(self):
+        layout = QVBoxLayout()
 
-def get_payout(row, bet):
-    if row[0] == row[1] == row[2]:
-        if row[0] == '🍒':
-            return bet * 5
-        elif row[0] == '🍉':
-            return bet * 10
-        elif row[0] == '🍋':
-            return bet * 15
-        elif row[0] == '🔔':
-            return bet * 20
-        elif row[0] == '⭐':
-            return bet * 25
-    return 0
+        # Balance display
+        self.balance_label = QLabel(f"Balance: ${self.balance}")
+        self.balance_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.balance_label)
 
-def main():
-    balance = 100
-    print("************************")
-    print("Welcome to Python Slots")
-    print("Symbols: 🍒 🍉 🍋 🔔 ⭐")
-    print("************************")
+        # Bet input
+        bet_layout = QHBoxLayout()
+        self.bet_input = QLineEdit()
+        self.bet_input.setPlaceholderText("Enter your bet")
+        bet_layout.addWidget(self.bet_input)
 
-    while balance > 0:
-        print(f"Current balance: {balance}")
+        self.bet_button = QPushButton("Spin")
+        self.bet_button.clicked.connect(self.play_round)
+        bet_layout.addWidget(self.bet_button)
 
-        bet = input("Place your bet amount: ")
+        layout.addLayout(bet_layout)
 
-        if not bet.isdigit():
-            print("Please enter a valid number")
-            continue
+        # Slot display
+        self.slot_labels = [QLabel("❓") for _ in range(3)]
+        slot_layout = QHBoxLayout()
+        for lbl in self.slot_labels:
+            lbl.setAlignment(Qt.AlignCenter)
+            lbl.setStyleSheet("font-size: 40px;")
+            slot_layout.addWidget(lbl)
+        layout.addLayout(slot_layout)
 
-        bet = int(bet)
+        # Result display
+        self.result_label = QLabel("")
+        self.result_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.result_label)
 
-        if bet > balance:
-            print("Insufficient funds")
-            continue
+        self.setLayout(layout)
+
+    def spin_row(self):
+        symbols = ['🍒', '🍉', '🍋', '🔔', '⭐']
+        return [random.choice(symbols) for _ in range(3)]
+
+    def get_payout(self, row, bet):
+        if row[0] == row[1] == row[2]:
+            if row[0] == '🍒':
+                return bet * 5
+            elif row[0] == '🍉':
+                return bet * 10
+            elif row[0] == '🍋':
+                return bet * 15
+            elif row[0] == '🔔':
+                return bet * 20
+            elif row[0] == '⭐':
+                return bet * 25
+        return 0
+
+    def play_round(self):
+        bet_text = self.bet_input.text()
+        if not bet_text.isdigit():
+            QMessageBox.warning(self, "Invalid Bet", "Please enter a valid number.")
+            return
+
+        bet = int(bet_text)
+
         if bet <= 0:
-            print("Bet must be greater than 0")
-            continue
-        balance -= bet
+            QMessageBox.warning(self, "Invalid Bet", "Bet must be greater than 0.")
+            return
+        if bet > self.balance:
+            QMessageBox.warning(self, "Insufficient Funds", "You don't have enough balance.")
+            return
 
-        row = spin_row()
-        print("Spinning...\n")
-        print_row(row)
+        self.balance -= bet
 
-        payout = get_payout(row, bet)
+        row = self.spin_row()
+        for i in range(3):
+            self.slot_labels[i].setText(row[i])
+
+        payout = self.get_payout(row, bet)
 
         if payout > 0:
-            print(f"You won ${payout}")
+            self.result_label.setText(f"You won ${payout}!")
         else:
-            print(f"Sorry you lost this round")
-        balance += payout
+            self.result_label.setText("Sorry, you lost this round.")
 
-        play_again = input("Would you like to play again? (Y/N): ").upper()
-        if play_again != 'Y':
-            break
-    print("*********************************************")
-    print(f"Game over! Your final balance is ${balance}")
-    print("*********************************************")
+        self.balance += payout
+        self.balance_label.setText(f"Balance: ${self.balance}")
+
+        if self.balance <= 0:
+            QMessageBox.information(self, "Game Over", "Your balance is 0. Game over!")
+            self.bet_button.setEnabled(False)
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    window = SlotMachine()
+    window.show()
+    sys.exit(app.exec_())
