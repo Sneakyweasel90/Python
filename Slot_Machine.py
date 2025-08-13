@@ -10,7 +10,7 @@ class SlotMachine(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Python Slots")
-        self.setGeometry(600, 200, 400, 300)
+        self.setGeometry(600, 200, 600, 300)
         self.balance = 100
 
         self.init_ui()
@@ -20,6 +20,7 @@ class SlotMachine(QWidget):
 
         # Balance display
         self.balance_label = QLabel(f"Balance: ${self.balance}")
+        self.setStyleSheet("font-size: 40px;")
         self.balance_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.balance_label)
 
